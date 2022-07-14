@@ -17,10 +17,19 @@ class SecretCode
   end
 end
 
+class Intro
+  def instructions
+
+  end
+end
+
 class Game
+  attr_accessor :quit
+
   def initialize
     @computer = SecretCode.new
     @computer.set_code
+    @quit = false
   end
 
   def guess_check(guess_code, secret_code)
@@ -29,13 +38,25 @@ class Game
       if guess_code[i] == secret_code[i] then @clue.push("O") end
     end
     
-    frequency_x = guess_code.intersection(secret_code).length - @clue.length
+    intersection = (guess_code & secret_code).flat_map do |num|
+      [num]*[guess_code.count(num), secret_code.count(num)].min
+    end
+    
+    frequency_x = intersection.length - @clue.length
     @clue.push(*["X"] * frequency_x)
   end
 
   def ask_code(string)
     puts "Input your #{string} as numbers separated by commas (e.g. 1, 2, 3, 4):"
     gets.chomp.gsub(/\s+/,"").split(",").map {|number| number.to_i}
+  end
+
+  def restart?
+    puts "\nDo you want to play again?\nPress 'y' to play again or 'n' to quit.\n"
+    answer = gets.chomp
+    puts
+    
+    if answer == "n" then @quit = true end 
   end
 
   def breaker_play
@@ -58,7 +79,7 @@ class Game
 
   def setter_play
     possible_codes = []
-    [1, 2, 3, 4, 5, 6].permutation(4) {|permutation| possible_codes.push(permutation)}
+    [1, 2, 3, 4, 5, 6].repeated_permutation(4) {|permutation| possible_codes.push(permutation)}
     secret_code = ask_code("secret code")
     guess = [1, 1, 2, 2]
 
@@ -70,7 +91,7 @@ class Game
         return
       end
 
-      temp = @clue.map {|one| one}
+      temp = @clue.intersection
 
       possible_codes.select! do |code|
         guess_check(guess, code)
@@ -83,8 +104,21 @@ class Game
 end
 
 my_game = Game.new
-my_game.setter_play
 
-# initial guess 1111 move to 2222 or 3333 until there's one "0" in clue
-# replace 3 of the ones with the next number, then replace 2 of the next number 
-# with the next next number
+loop do
+  puts "Press 1 to play as code breaker or 2 to play as code setter."
+  game_mode = gets.chomp.to_i
+  puts
+
+  if game_mode == 1 then my_game.breaker_play
+  elsif game_mode == 2 then my_game.setter_play
+  else
+    puts "Invalid input please try again."
+  end
+
+  my_game.restart?
+
+  if my_game.quit == true
+    return
+  end
+end
