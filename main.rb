@@ -1,5 +1,5 @@
 class SecretCode
-  attr_reader :code, :possible_codes
+  attr_reader :code, :possible_codes, :colors
 
   def initialize
     @colors = {
@@ -14,12 +14,6 @@ class SecretCode
 
   def set_code
     @code = @colors.keys.shuffle.take(4)
-  end
-end
-
-class Intro
-  def instructions
-
   end
 end
 
@@ -47,12 +41,21 @@ class Game
   end
 
   def ask_code(string)
-    puts "Input your #{string} as numbers separated by commas (e.g. 1, 2, 3, 4):"
-    gets.chomp.gsub(/\s+/,"").split(",").map {|number| number.to_i}
+    loop do
+      puts "Input your #{string} as numbers separated by commas (e.g. 1, 2, 3, 4):"
+      @input = gets.chomp.gsub(/\s+/,"").split(",").map {|number| number.to_i}
+
+      unless @input.all?(1..6) && @input.length == 4
+        puts "Invalid input, please try again.\n\n"
+        redo
+      else break end
+    end
+
+    @input
   end
 
   def restart?
-    puts "\nDo you want to play again?\nPress 'y' to play again or 'n' to quit.\n"
+    puts "\nDo you want to play again?\nEnter any key to play again or 'n' to quit.\n"
     answer = gets.chomp
     puts
     
@@ -79,13 +82,14 @@ class Game
 
   def setter_play
     possible_codes = []
-    [1, 2, 3, 4, 5, 6].repeated_permutation(4) {|permutation| possible_codes.push(permutation)}
+    @computer.colors.keys.repeated_permutation(4) {|permutation| possible_codes.push(permutation)}
     secret_code = ask_code("secret code")
     guess = [1, 1, 2, 2]
 
     12.times do
       guess_check(guess, secret_code)
       puts "Computer guess: #{guess} Clues: #{@clue}\n\n"
+
       if (@clue == ["O"] * 4)
         puts "Computer wins!"
         return
@@ -99,6 +103,7 @@ class Game
       end
 
       guess = possible_codes.shuffle.fetch(0)
+      sleep(1)
     end
   end
 end
@@ -106,7 +111,7 @@ end
 my_game = Game.new
 
 loop do
-  puts "Press 1 to play as code breaker or 2 to play as code setter."
+  puts "Enter 1 to play as code breaker or 2 to play as code setter."
   game_mode = gets.chomp.to_i
   puts
 
